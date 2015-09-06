@@ -73,16 +73,17 @@ def tokenize_and_stem(content):
             content: body of text to tokenize and stem
         Returns: list of stemmed root words
     """
-        tokenizer = RegexpTokenizer(r'[A-Za-z\-]{2,}')
-        tokens = tokenizer.tokenize(content.lower())
-        good_words = [w for w in tokens if w.lower() not in stopwords.words('english')]
-        stemmer = PorterStemmer()
-        stemmed_words = [stemmer.stem(w) for w in good_words]
-        return stemmed_words
+
+    tokenizer = RegexpTokenizer(r'[A-Za-z\-]{2,}')
+    tokens = tokenizer.tokenize(content.lower())
+    good_words = [w for w in tokens if w.lower() not in stopwords.words('english')]
+    stemmer = PorterStemmer()
+    stemmed_words = [stemmer.stem(w) for w in good_words]
+    return stemmed_words
 
 
 def main():
-    parser_sgm_file("dataset/data2.sgm")
+    parser_sgm_file("dataset/data02.sgm")
 
 if __name__ == "__main__":
     main()
