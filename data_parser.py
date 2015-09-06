@@ -1,10 +1,78 @@
-
 from bs4 import BeautifulSoup
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
-from collections import Counter
 import re
+
+
+def tokenize_and_stem(content):
+    """
+        Function to remove stop words and implement stemmer.
+
+        Keyword Arguments:
+            content: body of text to tokenize and stem
+
+        Returns: list of stemmed root words
+    """
+
+    # for cleaning the body of text
+    content = re.sub('[^0-9a-zA-Z<>/\s=!-\"\"]+', '', content)  # cleans much better
+
+
+    tokenizer = RegexpTokenizer(r'[A-Za-z\-]{2,}')
+    tokens = tokenizer.tokenize(content.lower())
+    good_words = [w for w in tokens if w.lower() not in stopwords.words('english')]
+    stemmer = PorterStemmer()
+    stemmed_words = [stemmer.stem(w) for w in good_words]
+    return stemmed_words
+
+
+def retrieve_stemmed_content(body_of_text):
+    """
+        Performs stemming and returns initial count, list of stemmed words and final count
+
+        Keyword Arguments:
+            body_of_text: text on which stemming is to be performed
+
+        Returns:
+            initial_sum: no of words initially
+            stemmed_body: list of stemmed words
+            stemmed_body_sum: after stemming the no of words
+    """
+    initial_sum = 0
+    for lines in body_of_text:
+        initial_sum += len(lines.split())
+
+    stemmed_body = []
+    for lines_body in body_of_text:
+        stemmed_body_row = tokenize_and_stem(lines_body)
+        stemmed_body.append(stemmed_body_row)
+
+    stemmed_body_sum = 0
+    for list_row_body in stemmed_body:
+        stemmed_body_sum += len(list_row_body)
+
+    return initial_sum, stemmed_body, stemmed_body_sum
+
+
+def parse_article(article):
+    """
+        Parses each article for its respective sub elements such as topics, titles, body etc
+
+        Keyword Arguments:
+            article: contains exactly one reuters article
+    """
+    article_body = article.body.string
+    article_topic = article.topics.string
+    article_title = article.title.string
+    article_date = article.date.string
+
+    initial_body_count, stemmed_body, final_body_count = retrieve_stemmed_content(article_body)
+
+    initial_title_count, stemmed_title, final_title_count = retrieve_stemmed_content(article_title)
+
+    print article_topic
+    print article_date
 
 
 def parser_sgm_file(data):
@@ -16,74 +84,20 @@ def parser_sgm_file(data):
             data: the sgm file data
     """
 
-    parser = BeautifulSoup(data)
+    parser = BeautifulSoup(data, 'html.parser')
 
-    content_body = parser.findAll('body')
-    print "No of body tags:"
-    print len(content_body)
+    print len(parser.findAll('reuters'))  # this contains the no of articles in one sgm file, should be 1000
 
-    initial_sum = 0
-    for lines in content_body:
-        initial_sum += len(lines.text.split())
-    print "Initial number of words in body: "
-    print initial_sum
-
-    # This strips the tag and retrieves the stemmed content of the tags body and title
-    stemmed_body = []
-    for lines_body in content_body:
-        stemmed_body_row = tokenize_and_stem(lines_body.text)
-        stemmed_body.append(stemmed_body_row)
-    #print stemmed_body
-
-    #No of words left after stemming
-    stemmed_body_sum = 0
-    for list_row_body in stemmed_body:
-        stemmed_body_sum += len(list_row_body)
-    print "Number of words from body after stemming and removing stop words:"
-    print stemmed_body_sum
-
-    content_title = parser.findAll('title')
-    print "No of title tags: "
-    print len(content_title)
-
-    initial_sum = 0
-    for lines in content_title:
-        initial_sum += len(lines.text.split())
-    print "Number of words in title tag:"
-    print initial_sum
-
-    stemmed_title = []
-    for lines_title in content_title:
-        stemmed_title_row = tokenize_and_stem(lines_title.text)
-        stemmed_title.append(stemmed_title_row)
-    #print stemmed_title
-
-    #No of words left after stemming
-    stemmed_title_sum = 0
-    for list_row_title in stemmed_title:
-        stemmed_title_sum += len(list_row_title)
-    print "Number of words from title after stemming and removing stop words: "
-    print stemmed_title_sum
-
-
-def tokenize_and_stem(content):
-    """
-        Function to remove stop words and implement stemmer.
-        Keyword Arguments:
-            content: body of text to tokenize and stem
-        Returns: list of stemmed root words
-    """
-
-    tokenizer = RegexpTokenizer(r'[A-Za-z\-]{2,}')
-    tokens = tokenizer.tokenize(content.lower())
-    good_words = [w for w in tokens if w.lower() not in stopwords.words('english')]
-    stemmer = PorterStemmer()
-    stemmed_words = [stemmer.stem(w) for w in good_words]
-    return stemmed_words
+    for article in parser.findAll('reuters'):
+        parse_article(article)
+        break
 
 
 def main():
-    parser_sgm_file("dataset/data02.sgm")
+    with open('dataset/data02.sgm', 'r') as f:
+        data = f.read()
+
+    parser_sgm_file(data)
 
 if __name__ == "__main__":
     main()
