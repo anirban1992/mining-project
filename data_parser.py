@@ -1,19 +1,21 @@
 
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from collections import Counter
 import re
 
-'''
-Function to parse SGM file and separate the tags : Filter out the tags needed now here
-Takes in SGM file url location as parameter
-'''
 
-def parser_sgm_file(url):
-    infile = open(url,'r')
-    data = infile.read()
+def parser_sgm_file(data):
+    """
+        Function to parse SGM file and separate the tags : Filter out the tags needed now here
+        Takes in SGM file data as parameter
+
+        Keyword Arguments:
+            data: the sgm file data
+    """
+
     parser = BeautifulSoup(data)
 
     content_body = parser.findAll('body')
@@ -63,11 +65,14 @@ def parser_sgm_file(url):
     print "Number of words from title after stemming and removing stop words: "
     print stemmed_title_sum
 
-'''
-Function to remove stop words and implement stemmer.
-'''
 
 def tokenize_and_stem(content):
+    """
+        Function to remove stop words and implement stemmer.
+        Keyword Arguments:
+            content: body of text to tokenize and stem
+        Returns: list of stemmed root words
+    """
         tokenizer = RegexpTokenizer(r'[A-Za-z\-]{2,}')
         tokens = tokenizer.tokenize(content.lower())
         good_words = [w for w in tokens if w.lower() not in stopwords.words('english')]
@@ -77,7 +82,7 @@ def tokenize_and_stem(content):
 
 
 def main():
-    parser_sgm_file("/home/priyanka/Desktop/Data Mining/reut2-000.sgm")
+    parser_sgm_file("dataset/data2.sgm")
 
 if __name__ == "__main__":
     main()
