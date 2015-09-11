@@ -4,6 +4,10 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from sklearn.feature_extraction.text import TfidfVectorizer
 import re
+import numpy as np
+from scipy.sparse import dok_matrix
+from scipy import *
+from time import time
 
 def vectorize_document(document):
     """
@@ -12,14 +16,15 @@ def vectorize_document(document):
     :return:
     """
     #Vectorize the document to compute tf-idf
-    document_tfidf_vectorizer = TfidfVectorizer(max_df=0.9,min_df=0.1)
-
-    #fit the vectorizer to the document content
-    tfidf_document_matrix = document_tfidf_vectorizer.fit_transform(document)
-    print tfidf_document_matrix.shape
+    document_tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+    '''
+    fit the vectorizer to the document content
+    '''
+    tfidf_document_matrix = document_tfidf_vectorizer.fit_transform(document.split('\n'))
+  #  print tfidf_document_matrix.shape
     idf = document_tfidf_vectorizer._tfidf.idf_
-    print dict(zip(document_tfidf_vectorizer.get_feature_names(), idf))
-
+   # print dict(zip(document_tfidf_vectorizer.get_feature_names(), idf))
+    return dict(zip(document_tfidf_vectorizer.get_feature_names(), idf))
 
 
 
@@ -74,59 +79,17 @@ def retrieve_stemmed_content(body_of_text):
 
     return initial_sum, stemmed_body, stemmed_body_sum
 
-
-def parse_article(article):
-    """
-        Parses each article for its respective sub elements such as topics, titles, body etc
-
-        Keyword Arguments:
-            article_id: the new id of one reuters article
-            article: contains exactly one reuters article
-    """
-    article_body = article.body
-    article_topic = article.topics
-    article_title = article.title
-    article_date = article.date
-    article_place = article.place
-
-    #article_reuters = article.reuters['NEWID']
-    #print article_reuters
-
-    '''
-    This is to just get the string values for non-null relevant tags
-    '''
-
-
-    if(article_body != None):
-        initial_body_count, stemmed_body, final_body_count = retrieve_stemmed_content(article_body.text)
-     #   print article_body.text
-     #   print stemmed_body
-        vectorize_document(stemmed_body)
-
-    if(article_topic != None):
-        initial_topic_count, stemmed_topic, final_topic_count = retrieve_stemmed_content(article_topic.text)
-
-    if(article_title != None):
-        initial_title_count, stemmed_title, final_title_count = retrieve_stemmed_content(article_title.text)
-
-    if(article_place != None):
-        initial_place_count, stemmed_place, final_place_count = retrieve_stemmed_content(article_place.text)
-
-    print article_topic
-    print article_date
-
 def main():
     """
     Read sgm files and parse each article from the individual documents
     :return:
     """
     article_dict_collection = []
-    for i in range(0,21):
+    for i in range(0,22):
         filename = 'data{}'.format(str(i).zfill(2))
         with open('dataset/'+filename+'.sgm' , 'r') as f:
             data = f.read()
             parser = BeautifulSoup(data, 'html.parser')
-
             '''
             Looping over each article distinguished by reuters tag , creating a dictionary out of each article of the format :
             {
@@ -146,34 +109,45 @@ def main():
 
             '''
 
+
+            '''
+            For now just iterating through all the documents , getting body from each article
+            computing tf-idf for each body and removing stop words
+            Resulting in a dictionary of the parsed words from the body of each article with the corresponding tf-idf.
+
+            '''
+            t0 = time()
+
             for article in parser.findAll('reuters'):
                 article_id = article.get('newid')
-                # print article_id
+              #  print article_id
                 article_dict = dict(article.attrs)
                 if(article.body != None):
-                    article_dict['Body'] = tokenize_and_stem(article.body.text)
-                else:
-                    article_dict['Body'] = ' '
-                if(article.topics != None):
-                    article_dict['Topics'] = tokenize_and_stem(article.topics.text)
-                else:
-                    article_dict['Topics'] = ' '
-                if(article.title != None):
-                    article_dict['Title'] = tokenize_and_stem(article.title.text)
-                else:
-                    article_dict['Title'] = ' '
-                if(article.places != None):
-                    article_dict['Places'] = tokenize_and_stem(article.places.text)
-                else:
-                    article_dict['Places'] = ' '
-                if(article.date != None):
-                    article_dict['Date'] = tokenize_and_stem(article.date.text)
-                else:
-                    article_dict['Date'] = ' '
+                    article_dict[int(article_id)] = vectorize_document(article.body.text)
+               # else:
+                #    article_dict[article_id] = ' '
+                # if(article.topics != None):
+                #     article_dict['Topics'] = tokenize_and_stem(article.topics.text)
+                # else:
+                #     article_dict['Topics'] = ' '
+                # if(article.title != None):
+                #     article_dict['Title'] = tokenize_and_stem(article.title.text)
+                # else:
+                #     article_dict['Title'] = ' '
+                # if(article.places != None):
+                #     article_dict['Places'] = tokenize_and_stem(article.places.text)
+                # else:
+                #     article_dict['Places'] = ' '
+                # if(article.date != None):
+                #     article_dict['Date'] = tokenize_and_stem(article.date.text)
+                # else:
+                #     article_dict['Date'] = ' '
                 article.clear()
-
                 article_dict_collection.append(article_dict)
+                article_dict.clear()
+    print("Length of article dictionary is :")
     print len(article_dict_collection)
+    print("Done in %0.3fs" % (time() - t0))
 
 if __name__ == "__main__":
     main()
