@@ -85,6 +85,7 @@ def main():
     :return:
     """
     article_dict_collection = []
+    t0 = time()
     for i in range(0,22):
         filename = 'data{}'.format(str(i).zfill(2))
         with open('dataset/'+filename+'.sgm' , 'r') as f:
@@ -116,7 +117,6 @@ def main():
             Resulting in a dictionary of the parsed words from the body of each article with the corresponding tf-idf.
 
             '''
-            t0 = time()
 
             for article in parser.findAll('reuters'):
                 article_id = article.get('newid')
