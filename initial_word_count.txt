@@ -1,0 +1,1 @@
+Total words in body tag of all the 21578 documents initially :2586294

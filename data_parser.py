@@ -5,6 +5,7 @@ import nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.stem.porter import PorterStemmer
 from time import time
+import numpy as np
 
 
 def tokenize(text):
@@ -15,6 +16,9 @@ def tokenize(text):
     for item in tokens:
         stems.append(PorterStemmer().stem(item))
     return stems
+
+def save_sparse_csr(filename,array):
+    np.savez(filename,data = array.data ,indices=array.indices,indptr =array.indptr, shape=array.shape )
 
 def main():
     """
@@ -70,21 +74,59 @@ def main():
 
                 article_info[article['newid']]['label'] = article['lewissplit']
 
+        '''
+        Extracting the dictionary of features into a .csv file
+        Format :
+            Article ID,Topic,Place, Label
+            20057,[u'south-korea'],[],TEST
+        '''
+        with open('dictionary.csv', 'wb') as f:
+            f.write('Article ID,Topic,Place,Label')
+            f.write('\n')
+            for key,value in article_info.iteritems():
+                f.write(key)
+                f.write(',')
+                for inner_key,inner_value in value.items():
+                    f.write(str(inner_value))
+                    f.write(',')
+                f.write('\n')
+
     # print 'No of valid articles = {}'.format(len(article_list))
     # print article_info
+
+    with open('initial_word_count.txt','wb') as ini:
+        sum =0
+        for word in article_list:
+            sum+= len(word.split())
+        ini.write('Total words in body tag of all the 21578 documents initially :'+str(sum))
 
     vectorizer = TfidfVectorizer(min_df=0.01, stop_words=stopwords.words('english'), tokenizer=tokenize, strip_accents='unicode', smooth_idf=True)
 
     feature_vector = vectorizer.fit_transform(article_list)
 
+    with open('unigram_word_count.txt','wb') as ini:
+            sum = len(vectorizer.get_feature_names())
+            ini.write('Total words in body tag remaining after stemming , removing stop words and computing tf-idf counts :'+str(sum))
+
     # print feature_vector
+
+    save_sparse_csr('feature_vector_unigram.csv',feature_vector)
 
     print vectorizer.get_feature_names()
     print '\n'
     print len(vectorizer.get_feature_names())
 
-    # bigram_vectorizer = TfidfVectorizer(min_df=0.01, stop_words=stopwords.words('english'), tokenizer=tokenize, ngram_range=(2,2), strip_accents='unicode', smooth_idf=True)
+    bigram_vectorizer = TfidfVectorizer(min_df=0.01, stop_words=stopwords.words('english'), tokenizer=tokenize, ngram_range=(2,2), strip_accents='unicode', smooth_idf=True)
 
+    bigram_feature_vector = bigram_vectorizer.fit_transform(article_list)
+
+    indices = np.argsort(bigram_vectorizer.idf_)[::-1]
+    features = bigram_vectorizer.get_feature_names()
+    top_n = 20
+    top_features = [features[i] for i in indices[:top_n]]
+    print top_features
+    with open('top_20_bigrams.txt','wb') as ini:
+             ini.write(str(top_features))
     print("Done in %0.3fs" % (time() - t0))
 
 if __name__ == "__main__":
