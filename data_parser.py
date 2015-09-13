@@ -2,12 +2,32 @@ from bs4 import BeautifulSoup
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
+from scipy.io.matlab.mio4 import arr_to_2d
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
 import re
 import numpy as np
 from scipy.sparse import dok_matrix
 from scipy import *
 from time import time
+from sklearn.feature_extraction.text import CountVectorizer
+
+def count_word_occurrence(article_body):
+    """
+    Function to get the number of occurrences of each word in an article
+    :param article_body:
+    :return: article_no_of_words : array of word count of the words occurring in each article taken as a document
+    """
+    try:
+        word_count = CountVectorizer()
+        article_no_of_words = word_count.fit_transform(article_body)
+        # print type(article_no_of_words)
+        # print article_no_of_words.toarray()
+        print article_no_of_words
+        return article_no_of_words
+    except:
+        return 0
+
 
 def vectorize_document(document):
     """
@@ -16,15 +36,19 @@ def vectorize_document(document):
     :return:
     """
     #Vectorize the document to compute tf-idf
-    document_tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+  #  document_tfidf_vectorizer = TfidfVectorizer(min_df=0.1)
+    document_tfidf_vectorizer = TfidfTransformer(norm='l2', smooth_idf=True, sublinear_tf=False, use_idf=True)
     '''
     fit the vectorizer to the document content
     '''
-    tfidf_document_matrix = document_tfidf_vectorizer.fit_transform(document.split('\n'))
+    tfidf_document_matrix = document_tfidf_vectorizer.fit_transform(document)
+   # print tfidf_document_matrix.idf
+ #   print document_tfidf_vectorizer.idf_
+   # print document_tfidf_vectorizer.__dict__
   #  print tfidf_document_matrix.shape
-    idf = document_tfidf_vectorizer._tfidf.idf_
+    #idf = document_tfidf_vectorizer._tfidf.idf_
    # print dict(zip(document_tfidf_vectorizer.get_feature_names(), idf))
-    return dict(zip(document_tfidf_vectorizer.get_feature_names(), idf))
+  #  return dict(zip(document_tfidf_vectorizer.get_feature_names(), idf))
 
 
 
@@ -77,14 +101,14 @@ def retrieve_stemmed_content(body_of_text):
     for list_row_body in stemmed_body:
         stemmed_body_sum += len(list_row_body)
 
-    return initial_sum, stemmed_body, stemmed_body_sum
+    return stemmed_body
 
 def main():
     """
     Read sgm files and parse each article from the individual documents
     :return:
     """
-    article_dict_collection = []
+    document_word_count = []
     t0 = time()
     for i in range(0,22):
         filename = 'data{}'.format(str(i).zfill(2))
@@ -120,33 +144,13 @@ def main():
 
             for article in parser.findAll('reuters'):
                 article_id = article.get('newid')
-              #  print article_id
+                print article_id
                 article_dict = dict(article.attrs)
                 if(article.body != None):
-                    article_dict[int(article_id)] = vectorize_document(article.body.text)
-               # else:
-                #    article_dict[article_id] = ' '
-                # if(article.topics != None):
-                #     article_dict['Topics'] = tokenize_and_stem(article.topics.text)
-                # else:
-                #     article_dict['Topics'] = ' '
-                # if(article.title != None):
-                #     article_dict['Title'] = tokenize_and_stem(article.title.text)
-                # else:
-                #     article_dict['Title'] = ' '
-                # if(article.places != None):
-                #     article_dict['Places'] = tokenize_and_stem(article.places.text)
-                # else:
-                #     article_dict['Places'] = ' '
-                # if(article.date != None):
-                #     article_dict['Date'] = tokenize_and_stem(article.date.text)
-                # else:
-                #     article_dict['Date'] = ' '
+                    stemmed_body = tokenize_and_stem(article.body.text)
+                    document_word_count.append(count_word_occurrence(stemmed_body))
                 article.clear()
-                article_dict_collection.append(article_dict)
-                article_dict.clear()
-    print("Length of article dictionary is :")
-    print len(article_dict_collection)
+            break
     print("Done in %0.3fs" % (time() - t0))
 
 if __name__ == "__main__":
