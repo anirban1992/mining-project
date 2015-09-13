@@ -7,13 +7,13 @@ from nltk.stem.porter import PorterStemmer
 from time import time
 import numpy as np
 
-cachedStopWords = stopwords.words("english")
+cachedStopWords = set(stopwords.words("english"))
 
 def tokenize(text):
     text = text.lower()
     text = re.sub(r'[^a-zA-Z0-9 ]+', '', text)
-    text = ' '.join([word for word in text.split() if word not in cachedStopWords])
     tokens = nltk.word_tokenize(text)
+    tokens = [word for word in tokens if word not in cachedStopWords]
     stems = []
     for item in tokens:
         stems.append(PorterStemmer().stem(item))
@@ -102,7 +102,7 @@ def main():
             sum += len(word.split())
         ini.write('Total words in body tag of all the 21578 documents initially :'+str(sum))
 
-    vectorizer = TfidfVectorizer(min_df=0.01, stop_words=cachedStopWords, tokenizer=tokenize, strip_accents='unicode', smooth_idf=True)
+    vectorizer = TfidfVectorizer(min_df=0.01, tokenizer=tokenize, strip_accents='unicode', smooth_idf=True)
 
     feature_vector = vectorizer.fit_transform(article_list)
 
@@ -118,7 +118,7 @@ def main():
     print '\n'
     print len(vectorizer.get_feature_names())
 
-    bigram_vectorizer = TfidfVectorizer(min_df=0.01, stop_words=cachedStopWords, tokenizer=tokenize, ngram_range=(2,2), strip_accents='unicode', smooth_idf=True)
+    bigram_vectorizer = TfidfVectorizer(min_df=0.01, tokenizer=tokenize, ngram_range=(2,2), strip_accents='unicode', smooth_idf=True)
 
     bigram_feature_vector = bigram_vectorizer.fit_transform(article_list)
 
