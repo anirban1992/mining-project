@@ -70,7 +70,7 @@ def main():
                     article_info[article['newid']]['topic'].append(topic.text)
 
                 for place in place_parser.findAll('d'):
-                    article_info[article['newid']]['topic'].append(place.text)
+                    article_info[article['newid']]['place'].append(place.text)
 
                 article_info[article['newid']]['label'] = article['lewissplit']
 
@@ -97,7 +97,7 @@ def main():
     with open('initial_word_count.txt','wb') as ini:
         sum =0
         for word in article_list:
-            sum+= len(word.split())
+            sum += len(word.split())
         ini.write('Total words in body tag of all the 21578 documents initially :'+str(sum))
 
     vectorizer = TfidfVectorizer(min_df=0.01, stop_words=stopwords.words('english'), tokenizer=tokenize, strip_accents='unicode', smooth_idf=True)
