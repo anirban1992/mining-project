@@ -1,7 +1,7 @@
 All: step2
 
 step1:
-	fetcher.py
+	python fetcher.py
 
 step2: step1
 	python data_parser.py
