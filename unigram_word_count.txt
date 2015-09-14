@@ -1,1 +1,1 @@
-Total words in body tag remaining after stemming , removing stop words and computing tf-idf counts :4001
+Total words in body tag remaining after stemming , removing stop words and computing tf-idf counts :3680

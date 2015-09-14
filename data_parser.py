@@ -6,6 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from nltk.stem.porter import PorterStemmer
 from time import time
 import numpy as np
+import cPickle as pickle
 
 cachedStopWords = set(stopwords.words("english"))
 
@@ -13,7 +14,7 @@ def tokenize(text):
     text = text.lower()
     text = re.sub(r'[^a-zA-Z ]+', ' ', text)
     tokens = nltk.word_tokenize(text)
-    tokens = [word for word in tokens if word not in cachedStopWords or len(word) > 3]
+    tokens = [word for word in tokens if word not in cachedStopWords and len(word) > 3]
     stems = []
     for item in tokens:
         stems.append(PorterStemmer().stem(item))
@@ -79,25 +80,24 @@ def main():
             20057,[u'south-korea'],[],TEST
         '''
 
-    # with open('dictionary.csv', 'wb') as f:
-    #     f.write('Article ID,Topic,Place,Label')
-    #     f.write('\n')
-    #     for key, value in article_info.iteritems():
-    #         f.write(key)
-    #         f.write(',')
-    #         for inner_key,inner_value in value.items():
-    #             f.write(str(inner_value))
-    #             f.write(',')
-    #         f.write('\n')
+    with open('dictionary.csv', 'wb') as f:
+        f.write('Article ID,Topic,Place,Label')
+        f.write('\n')
+        for key, value in article_info.iteritems():
+            f.write(key)
+            f.write(',')
+            for inner_key,inner_value in value.items():
+                f.write(str(inner_value))
+                f.write(',')
+            f.write('\n')
 
-    # print 'No of valid articles = {}'.format(len(article_list))
-    # print article_info
+    print 'No of valid articles = {}'.format(len(article_list))
 
-    # with open('initial_word_count.txt', 'wb') as ini:
-    #     sum =0
-    #     for word in article_list:
-    #         sum += len(word.split())
-    #     ini.write('Total words in body tag of all the 21578 documents initially :'+str(sum))
+    with open('initial_word_count.txt', 'wb') as ini:
+        sum =0
+        for word in article_list:
+            sum += len(word.split())
+        ini.write('Total words in body tag of all the 21578 documents initially :'+str(sum))
 
 
     vectorizer = TfidfVectorizer(min_df=0.001, tokenizer=tokenize, strip_accents='unicode', max_df=0.9, smooth_idf=True)
@@ -105,6 +105,10 @@ def main():
     feature_vector = vectorizer.fit_transform(article_list)
 
     feature_list = vectorizer.get_feature_names()
+    print feature_list
+    with open('feature_list.csv','wb') as feature:
+        for value in feature_list:
+            feature.write(str(value)+'\n')
     print len(feature_list)
 
     counter_vectorizer = CountVectorizer(vocabulary=vectorizer.vocabulary_, strip_accents='unicode')
@@ -112,6 +116,14 @@ def main():
     # for the word frequency counts
     data_matrix = counter_vectorizer.fit_transform(article_list)  # data matrix
     transaction_matrix = vectorizer.inverse_transform(feature_vector)  # transaction matrix
+
+    ## Un-comment from here to generate data_matrix and transaction_matrix
+
+    # with open('data_matrix.dat', 'wb') as outfile:
+    #     pickle.dump(data_matrix, outfile, pickle.HIGHEST_PROTOCOL)
+    #
+    # with open('transaction_matrix.dat', 'wb') as outfile:
+    #     pickle.dump(transaction_matrix, outfile, pickle.HIGHEST_PROTOCOL)
 
     with open('unigram_word_count.txt','wb') as ini:
             sum = len(vectorizer.get_feature_names())
