@@ -2,11 +2,12 @@ from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 import re
 import nltk
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer , TfidfTransformer
 from nltk.stem.porter import PorterStemmer
 from time import time
 import numpy as np
 import cPickle as pickle
+from sklearn.cluster import KMeans
 
 cachedStopWords = set(stopwords.words("english"))
 
@@ -14,11 +15,26 @@ def tokenize(text):
     text = text.lower()
     text = re.sub(r'[^a-zA-Z ]+', ' ', text)
     tokens = nltk.word_tokenize(text)
-    tokens = [word for word in tokens if word not in cachedStopWords and len(word) > 3]
+    tokens = [word for word in tokens if (word not in cachedStopWords or topics_list) and len(word) > 3]
     stems = []
     for item in tokens:
         stems.append(PorterStemmer().stem(item))
     return stems
+
+def getTopics(article_info,list):
+    """
+    Returns topic list.
+    :param article_info:
+    :param list:
+    :return:
+    """
+    for key,value in article_info.iteritems():
+        if isinstance(value, dict): # If value itself is dictionary
+            getTopics(value, list)
+        elif (key == 'topic'):
+            list.append(value)
+   # print list
+    return list
 
 def main():
     """
@@ -62,8 +78,8 @@ def main():
             article_info[article['newid']]['topic'] = []
             article_info[article['newid']]['place'] = []
 
-            topic_parser = article.topics
             place_parser = article.places
+            topic_parser = article.topics
 
             for topic in topic_parser.findAll('d'):
                 article_info[article['newid']]['topic'].append(topic.text)
@@ -80,36 +96,62 @@ def main():
             20057,[u'south-korea'],[],TEST
         '''
 
-    with open('dictionary.csv', 'wb') as f:
-        f.write('Article ID,Topic,Place,Label')
-        f.write('\n')
-        for key, value in article_info.iteritems():
-            f.write(key)
-            f.write(',')
-            for inner_key,inner_value in value.items():
-                f.write(str(inner_value))
-                f.write(',')
-            f.write('\n')
+    # with open('dictionary.csv', 'wb') as f:
+    #     f.write('Article ID,Topic,Place,Label')
+    #     f.write('\n')
+    #     for key, value in article_info.iteritems():
+    #         f.write(key)
+    #         f.write(',')
+    #         for inner_key,inner_value in value.items():
+    #             f.write(str(inner_value))
+    #             f.write(',')
+    #         f.write('\n')
 
     print 'No of valid articles = {}'.format(len(article_list))
+    #To create a global list of topics used while tokenization(used in tokenize function) to make sure feature words do not belong to topic list
+    global topics_list
+    topics_list = list()
+    topics = getTopics(article_info,[])
+    for topic in topics:
+        for innertopic in topic:
+            topics_list.append(innertopic)
 
     with open('initial_word_count.txt', 'wb') as ini:
         sum =0
         for word in article_list:
             sum += len(word.split())
-        ini.write('Total words in body tag of all the 21578 documents initially :'+str(sum))
+        print(sum)
+      #  ini.write('Total words in body tag of all the 21578 documents initially :'+str(sum))
 
 
-    vectorizer = TfidfVectorizer(min_df=0.001, tokenizer=tokenize, strip_accents='unicode', max_df=0.9, smooth_idf=True)
+    vectorizer = TfidfVectorizer(min_df= 0.001,max_df=0.9, tokenizer=tokenize, strip_accents='unicode', smooth_idf=True)
 
     feature_vector = vectorizer.fit_transform(article_list)
 
     feature_list = vectorizer.get_feature_names()
-    print feature_list
-    with open('feature_list.csv','wb') as feature:
-        for value in feature_list:
-            feature.write(str(value)+'\n')
     print len(feature_list)
+
+    km = KMeans(init='k-means++',n_clusters=10,verbose=True)
+
+    km.fit(feature_vector,feature_list)
+
+    clusters = km.labels_.tolist()
+    print("Top terms per cluster:")
+    order_centroids = km.cluster_centers_.argsort()[:, ::-1]
+    for i in np.unique(clusters):
+        print("Cluster %d:" % i)
+        for ind in order_centroids[i, :10]:
+            print(' %s' % feature_list[ind])
+
+    with open('feature_vector', 'wb') as outfile:
+        pickle.dump(feature_vector, outfile, pickle.HIGHEST_PROTOCOL)
+
+    with open('features_list', 'wb') as f:
+        pickle.dump(feature_list, f, pickle.HIGHEST_PROTOCOL)
+
+    # with open('feature_list.csv','wb') as feature:
+    #     for value in feature_list:
+    #         feature.write(str(value)+'\n')
 
     counter_vectorizer = CountVectorizer(vocabulary=vectorizer.vocabulary_, strip_accents='unicode')
 
@@ -125,9 +167,9 @@ def main():
     # with open('transaction_matrix.dat', 'wb') as outfile:
     #     pickle.dump(transaction_matrix, outfile, pickle.HIGHEST_PROTOCOL)
 
-    with open('unigram_word_count.txt','wb') as ini:
-            sum = len(vectorizer.get_feature_names())
-            ini.write('Total words in body tag remaining after stemming , removing stop words and computing tf-idf counts :'+str(sum))
+    # with open('unigram_word_count.txt','wb') as ini:
+    #         sum = len(vectorizer.get_feature_names())
+    #         ini.write('Total words in body tag remaining after stemming , removing stop words and computing tf-idf counts :'+str(sum))
 
     bigram_vectorizer = TfidfVectorizer(min_df=0.001, tokenizer=tokenize, ngram_range=(2,2), strip_accents='unicode', max_df=0.9, smooth_idf=True)
 
@@ -138,8 +180,8 @@ def main():
     top_n = 20
     top_features = [features[i] for i in indices[:top_n]]
     print top_features
-    with open('top_20_bigrams.txt','wb') as ini:
-             ini.write(str(top_features))
+    # with open('top_20_bigrams.txt','wb') as ini:
+    #          ini.write(str(top_features))
     print("Done in %0.3fs" % (time() - t0))
 
 if __name__ == "__main__":
