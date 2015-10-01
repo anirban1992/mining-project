@@ -29,10 +29,10 @@ def getTopics(article_info,list):
     :return:
     """
     for key,value in article_info.iteritems():
-        if isinstance(value, dict): # If value itself is dictionary
-            getTopics(value, list)
+        if isinstance(value,dict):
+            getTopics(value,list)# If value itself is dictionary
         elif (key == 'topic'):
-            list.append(value)
+                list.append(value)
    # print list
     return list
 
@@ -69,8 +69,11 @@ def main():
         '''
 
         for article in parser.findAll('reuters'):
+
+
             try:
                 article_list.append(article.body.text)
+
             except AttributeError:
                 continue
 
@@ -80,14 +83,20 @@ def main():
 
             place_parser = article.places
             topic_parser = article.topics
-
+            topic_list = []
             for topic in topic_parser.findAll('d'):
-                article_info[article['newid']]['topic'].append(topic.text)
+                topic_list.append(topic.text)
 
             for place in place_parser.findAll('d'):
                 article_info[article['newid']]['place'].append(place.text)
 
             article_info[article['newid']]['label'] = article['lewissplit']
+            if(len(topic_list)==0):
+                article_list.pop()
+                article_info.popitem()
+            else:
+                article_info[article['newid']]['topic'].append(topic_list)
+
 
         '''
         Extracting the dictionary of features into a .csv file
@@ -112,15 +121,20 @@ def main():
     global topics_list
     topics_list = list()
     topics = getTopics(article_info,[])
+    print(topics)
+    print(len(topics))
+
     for topic in topics:
         for innertopic in topic:
             topics_list.append(innertopic)
 
-    with open('initial_word_count.txt', 'wb') as ini:
-        sum =0
-        for word in article_list:
-            sum += len(word.split())
-        print(sum)
+    with open('topic_labels', 'wb') as outfile:
+        pickle.dump(topics, outfile, pickle.HIGHEST_PROTOCOL)
+
+    # with open('initial_word_count.txt', 'wb') as ini:
+    #     sum =0
+    #     for word in article_list:
+    #         sum += len(word.split())
       #  ini.write('Total words in body tag of all the 21578 documents initially :'+str(sum))
 
 
@@ -130,18 +144,6 @@ def main():
 
     feature_list = vectorizer.get_feature_names()
     print len(feature_list)
-
-    km = KMeans(init='k-means++',n_clusters=10,verbose=True)
-
-    km.fit(feature_vector,feature_list)
-
-    clusters = km.labels_.tolist()
-    print("Top terms per cluster:")
-    order_centroids = km.cluster_centers_.argsort()[:, ::-1]
-    for i in np.unique(clusters):
-        print("Cluster %d:" % i)
-        for ind in order_centroids[i, :10]:
-            print(' %s' % feature_list[ind])
 
     with open('feature_vector', 'wb') as outfile:
         pickle.dump(feature_vector, outfile, pickle.HIGHEST_PROTOCOL)
