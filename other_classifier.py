@@ -19,6 +19,22 @@ import numpy as np
 # where features would be list of feature types and topics would be list of topics -> for each
 
 
+def create_training_test_data(feature_dict):
+    # structure is
+    # { topic : { [{term : 1 , term2 : 1} , {term1: 2, term3 : 4}] }, topic2 : {[{}, {}]}
+    SPLIT_RATIO = 0.8
+    train_data = []
+    test_data = []
+    for topic, topic_vector in feature_dict.iteritems():
+        train_limit = len(topic_vector) * SPLIT_RATIO
+        for i, feature_vector in enumerate(topic_vector):
+            if i <= train_limit:
+                train_data.append([feature_vector, topic])
+            else:
+                test_data.append([feature_vector, topic])
+    return train_data, test_data
+
+
 def naive_bayes_classifer(feature_vector_train, feature_vector_test):
     vectorizer = DictVectorizer(dtype=float, sparse=True)
     classifier = MultinomialNB()
@@ -62,8 +78,9 @@ def decision_tree_classifier(feature_vector_train, feature_vector_test):
 
 def main():
     # get the feature_vector_train and feature_vector_test.. Your choice of splitting
-    feature_vector_train = []
-    feature_vector_test = []
+    feature_dict = {}
+
+    feature_vector_train, feature_vector_test = create_training_test_data(feature_dict)
 
     start_time1 = arrow.utcnow().timestamp
     naive_bayes_classifer(feature_vector_train, feature_vector_test)
