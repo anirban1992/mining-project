@@ -7,6 +7,8 @@ from nltk.stem.porter import PorterStemmer
 from time import time
 import numpy as np
 import cPickle as pickle
+
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.cluster import KMeans
 
 cachedStopWords = set(stopwords.words("english"))
@@ -32,8 +34,8 @@ def getTopics(article_info,list):
         if isinstance(value,dict):
             getTopics(value,list)# If value itself is dictionary
         elif (key == 'topic'):
-                list.append(value)
-   # print list
+            list.append(value)
+            # print list
     return list
 
 def main():
@@ -69,8 +71,6 @@ def main():
         '''
 
         for article in parser.findAll('reuters'):
-
-
             try:
                 article_list.append(article.body.text)
 
@@ -121,21 +121,23 @@ def main():
     global topics_list
     topics_list = list()
     topics = getTopics(article_info,[])
-    print(topics)
-    print(len(topics))
 
-    for topic in topics:
-        for innertopic in topic:
-            topics_list.append(innertopic)
+    for topic_article in topics:
+        if topic_article:
+            for topic in topic_article:
+                if topic:
+                    for top in topic:
+                        topics_list.append(top)
+
 
     with open('topic_labels', 'wb') as outfile:
         pickle.dump(topics, outfile, pickle.HIGHEST_PROTOCOL)
 
-    # with open('initial_word_count.txt', 'wb') as ini:
-    #     sum =0
-    #     for word in article_list:
-    #         sum += len(word.split())
-      #  ini.write('Total words in body tag of all the 21578 documents initially :'+str(sum))
+        # with open('initial_word_count.txt', 'wb') as ini:
+        #     sum =0
+        #     for word in article_list:
+        #         sum += len(word.split())
+        #  ini.write('Total words in body tag of all the 21578 documents initially :'+str(sum))
 
 
     vectorizer = TfidfVectorizer(min_df= 0.001,max_df=0.9, tokenizer=tokenize, strip_accents='unicode', smooth_idf=True)
@@ -143,7 +145,6 @@ def main():
     feature_vector = vectorizer.fit_transform(article_list)
 
     feature_list = vectorizer.get_feature_names()
-    print len(feature_list)
 
     with open('feature_vector', 'wb') as outfile:
         pickle.dump(feature_vector, outfile, pickle.HIGHEST_PROTOCOL)
@@ -151,27 +152,34 @@ def main():
     with open('features_list', 'wb') as f:
         pickle.dump(feature_list, f, pickle.HIGHEST_PROTOCOL)
 
-    # with open('feature_list.csv','wb') as feature:
-    #     for value in feature_list:
-    #         feature.write(str(value)+'\n')
+# with open('feature_list.csv','wb') as feature:
+#     for value in feature_list:
+#         feature.write(str(value)+'\n')
 
     counter_vectorizer = CountVectorizer(vocabulary=vectorizer.vocabulary_, strip_accents='unicode')
 
     # for the word frequency counts
     data_matrix = counter_vectorizer.fit_transform(article_list)  # data matrix
     transaction_matrix = vectorizer.inverse_transform(feature_vector)  # transaction matrix
+    # terms = counter_vectorizer.get_feature_names()
+    # freqs = data_matrix
+    # result = dict(zip(terms, freqs))
+    # print result
+    # print(len(result))
 
-    ## Un-comment from here to generate data_matrix and transaction_matrix
 
-    # with open('data_matrix.dat', 'wb') as outfile:
-    #     pickle.dump(data_matrix, outfile, pickle.HIGHEST_PROTOCOL)
-    #
-    # with open('transaction_matrix.dat', 'wb') as outfile:
-    #     pickle.dump(transaction_matrix, outfile, pickle.HIGHEST_PROTOCOL)
 
-    # with open('unigram_word_count.txt','wb') as ini:
-    #         sum = len(vectorizer.get_feature_names())
-    #         ini.write('Total words in body tag remaining after stemming , removing stop words and computing tf-idf counts :'+str(sum))
+## Un-comment from here to generate data_matrix and transaction_matrix
+
+# with open('data_matrix.dat', 'wb') as outfile:
+#     pickle.dump(data_matrix, outfile, pickle.HIGHEST_PROTOCOL)
+#
+# with open('transaction_matrix.dat', 'wb') as outfile:
+#     pickle.dump(transaction_matrix, outfile, pickle.HIGHEST_PROTOCOL)
+
+# with open('unigram_word_count.txt','wb') as ini:
+#         sum = len(vectorizer.get_feature_names())
+#         ini.write('Total words in body tag remaining after stemming , removing stop words and computing tf-idf counts :'+str(sum))
 
     bigram_vectorizer = TfidfVectorizer(min_df=0.001, tokenizer=tokenize, ngram_range=(2,2), strip_accents='unicode', max_df=0.9, smooth_idf=True)
 

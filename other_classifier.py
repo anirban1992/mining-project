@@ -1,6 +1,7 @@
 from nltk.classify.scikitlearn import SklearnClassifier
 from sklearn.naive_bayes import *
 from sklearn.tree import *
+import cPickle as pickle
 import arrow
 from sklearn.metrics import classification_report
 from sklearn.feature_extraction import DictVectorizer
@@ -78,7 +79,7 @@ def decision_tree_classifier(feature_vector_train, feature_vector_test):
 
 def main():
     # get the feature_vector_train and feature_vector_test.. Your choice of splitting
-    feature_dict = {}
+    feature_dict = pickle.load(open('features_list', 'rb'))
 
     feature_vector_train, feature_vector_test = create_training_test_data(feature_dict)
 

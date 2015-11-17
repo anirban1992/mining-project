@@ -1,10 +1,23 @@
 Dependency:
+
 To fetch all the data files (.sgm) we have used the module “requests”. To include the module follow either of the two steps:
 	1. You can download the required module by clicking on the following link:
 		tarball
 		Followed by : python setup.py install - - user
 	2. cd /home/6/sadavart/data_mining/lab1/requests-module-dependency/
-		python setup.py install - - user
+		python setup.py install -- user
+
+
+Submissions:
+
+README
+makefile
+CSE5243-Lab3.pdf  # Report
+fetcher.py
+my_data_parser.py
+
+We did not experiment much with other distance metrics, but we have written the code, in such a way, that one has to simply replace words, such as ‘Ward’, ‘Euclidean’ etc, with the other alternative. Also, we have stuck to a lot with Euclidean metric. However, observing our code, one can see that we have created a simple provision to test other metrics.
+So if you want to test the code against the other metrics you can just replace these keywords with the metric you want to test against.
 
 To execute the Code:
 
@@ -12,20 +25,5 @@ make step2
 
 Executing ‘make step2’ : 
 Would first execute fetcher.py .
-Would execute data_parser.py.
-
-If you want you create the data_matrix and transaction_matrix then please un-comment the code in data_parser.py, that is , line 122-126
-
-All the submissions files are located in :
-/home/6/sadavart/data_mining/lab1/submissions/ 
-
-Output format:
-
-python fetcher.py
-python data_parser.py
-No of valid articles = 19043
-[u'abandon', u'abdul', u'abid', u'abil', u'abl', u'abolish ….] => prints the feature list
-3680 => length of feature list
-[u'zoet wedd', u'grain trader', u'good reuter', u'govern borrow', u'govern fund', u'three major', u'grain import', u'grain product', u'group offer', u'howev analyst', u'texa democrat', u'term transact', u'term sale', u'hanov corp', u'hold billion', u'holder receiv', u'german econom', u'gener dynam', u'full scale', u'fuji bank'] => top 20 bi-grams
-Done in 147.105s
+Would execute my_data_parser.py.
 
