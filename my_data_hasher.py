@@ -103,7 +103,6 @@ def sklearn_tdm_df(docs):
 
 print "Shingling articles..."
 
-
 curShingleID = 0
 docsAsShingleSets = {};
 docNames = []
@@ -122,9 +121,15 @@ for id,value in article_info.iteritems():
 
   shinglesInDoc = set()
 
-  for index in range(0, len(words) - 2):
-    # Using Shingle length = 3
-    shingle = words[index] + " " + words[index + 1] + " " + words[index + 2]
+ # for index in range(0,len(words) - 4):
+ # for index in range(0, len(words) - 2):
+ # for index in range(0, len(words) - 1):
+  for index in range(0,len(words)):
+    # Using Shingle length = 1,2,3,5
+    shingle = words[index]
+    #shingle = words[index] + " " + words[index + 1]
+    #shingle = words[index] + " " + words[index + 1] + " " + words[index + 2]
+    #shingle = words[index] + " " + words[index + 1] + " " + words[index + 2] + words[index + 3] + " " + words[index + 4]
 
     # Hash the shingle to a 32-bit integer.
     crc = binascii.crc32(shingle) & 0xffffffff
@@ -132,7 +137,11 @@ for id,value in article_info.iteritems():
 
   # Store the completed list of shingles for this document in the dictionary.
   docsAsShingleSets[docID] = shinglesInDoc
-  totalShingles = totalShingles + (len(words) - 2)
+
+  totalShingles = totalShingles + len(words)
+  #totalShingles = totalShingles + (len(words) - 1)
+  #totalShingles = totalShingles + (len(words) - 2)
+  #totalShingles = totalShingles + (len(words) - 4)
 
 print '\nShingling ' + str(numDocs) + ' docs took %.2f sec.' % (time.time() - t0)
 
@@ -172,7 +181,9 @@ for i in range(0, numDocs):
     for j in range(i + 1, numDocs):
         s2 = docsAsShingleSets[docNames[j]]
 
-        JSim[getTriangleIndex(i, j)] = (len(s1.intersection(s2)) / len(s1.union(s2)))
+        if(len(s1.union(s2)) != 0):
+
+            JSim[getTriangleIndex(i, j)] = (len(s1.intersection(s2)) / len(s1.union(s2)))
 
 elapsed = (time.time() - t0)
 
@@ -295,5 +306,5 @@ for k in hash_range:
     sse.append(compute_min_hash(k))
 
 plt.plot(hash_range, sse, 'xb-')
-plt.axis([5, 280, 0, 1])
+plt.axis([5, 280, min(sse) - 1, max(sse) + 1])
 plt.show()
